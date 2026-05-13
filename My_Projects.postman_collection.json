@@ -1,0 +1,824 @@
+{
+  "info": {
+    "_postman_id": "a83d67d7-bb79-4fa4-89cd-d072dfd9903f",
+    "name": "My_Projects",
+    "description": "# My_Projects — API Test Collection\n\nThis collection covers a **complete, end-to-end API testing workflow** built on the [reqres.in](https://reqres.in) REST API. It is structured into two focused folders, each demonstrating a distinct testing scenario — from basic authentication flows to a fully automated user lifecycle.\n\nThe collection is designed to be run using the **Postman Collection Runner** with the **Environment Testing 2** environment active.\n\n---\n\n## Collection Structure\n\n```\nMy_Projects\n├── Authorization and Authentication/\n│   ├── Login                    (POST  {{baseURL}}/api/login)\n│   └── Get User                 (GET   {{baseURL}}/api/users?page=2)\n│\n└── User Flow Automation/\n    ├── Login (extract token)    (POST  {{baseUrl}}/api/login)       — Step 1\n    ├── Create User              (POST  {{baseUrl}}/api/users)        — Step 2\n    ├── Update User              (PUT   {{baseUrl}}/api/users/{{userId}}) — Step 3\n    └── Delete User              (DELETE {{baseUrl}}/api/users/{{userId}}) — Step 4\n\n ```\n\n---\n\n## Folders Overview\n\n### 1\\. Authorization and Authentication\n\nDemonstrates the core login-and-token-reuse pattern. A `Login` request authenticates the user and stores the returned bearer token in `{{token}}`. The `Get User` request then uses that token to make an authenticated call to retrieve a paginated list of users.\n\n### 2\\. User Flow Automation\n\nAn end-to-end automated flow covering the full user lifecycle:\n\n- **Login** → extracts and stores `{{token}}`\n    \n- **Create User** → creates a user and stores `{{userId}}`\n    \n- **Update User** → updates the user using `{{userId}}`\n    \n- **Delete User** → deletes the user and cleans up `{{userId}}`\n    \n\nAll steps are chained via environment variables and designed to run sequentially in the Collection Runner.\n\n---\n\n## Environment Variables\n\nThis collection uses the **Environment Testing 2** environment. The following variables are required:\n\n| Variable | Type | Description |\n| --- | --- | --- |\n| `{{baseUrl}}` | string | Base URL of the API (e.g., `https://reqres.in`) |\n| `{{token}}` | secret | Bearer token extracted from the Login response |\n| `{{userId}}` | string | User ID extracted from the Create User response (set/unset dynamically) |\n| `{{time now}}` | string | Current timestamp set by the Login pre-request script |\n\n---\n\n## Authentication\n\nAll authenticated requests use **Bearer Token** authentication sourced from `{{token}}`. All requests also include an `x-api-key` header required by the reqres.in API.\n\n---\n\n## How to Run\n\n1. Select the **Environment Testing 2** environment\n    \n2. Ensure `{{baseUrl}}` is set to `https://reqres.in`\n    \n3. Open the **Collection Runner**\n    \n4. Select the **My_Projects** collection\n    \n5. Run all requests in order — the scripts will handle token and userId propagation automatically\n    \n\n---\n\n## Test Coverage Summary\n\n| Request | Positive Tests | Negative Tests |\n| --- | --- | --- |\n| Login (Auth folder) | 8 | 4 |\n| Get User | 15 | 6 |\n| Login (extract token) | 7 | 4 |\n| Create User | 9 | 4 |\n| Update User | 9 | 4 |\n| Delete User | 6 | 4 |\n\n---\n\n## API Reference\n\nAll requests target the [reqres.in](https://reqres.in) hosted REST API — a free, open API designed for testing and prototyping.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53950546",
+    "_collection_link": "https://go.postman.co/collection/53950546-a83d67d7-bb79-4fa4-89cd-d072dfd9903f?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Authorization and Authentication",
+      "item": [
+        {
+          "name": "Get User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set the environment variable 'timestamp' to the current Unix timestamp (in seconds)",
+                  "pm.environment.set(\"timestamp\", Math.floor(Date.now() / 1000));",
+                  "console.log(\"timestamp:\", Math.floor(Date.now() / 1000))"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// =============================================",
+                  "// GET USER REQUEST — TEST SUITE",
+                  "// =============================================",
+                  "",
+                  "// --- POSITIVE TEST CASES ---",
+                  "",
+                  "pm.test(\"✅ [Positive] Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response time is under 3000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response Content-Type is application/json\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response body is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response contains 'page' property\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Page number equals 2 (matches query param)\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.page).to.eql(2);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response contains 'per_page' property\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"per_page\");",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response contains 'total' property as a positive number\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"total\");",
+                  "    pm.expect(jsonData.total).to.be.a(\"number\").and.to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response contains 'total_pages' property\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"total_pages\");",
+                  "    pm.expect(jsonData.total_pages).to.be.a(\"number\").and.to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response contains 'data' array\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"data\");",
+                  "    pm.expect(jsonData.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] 'data' array is non-empty\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Each user object has required fields: id, email, first_name, last_name, avatar\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.data.forEach(function (user) {",
+                  "        pm.expect(user).to.have.property(\"id\");",
+                  "        pm.expect(user).to.have.property(\"email\");",
+                  "        pm.expect(user).to.have.property(\"first_name\");",
+                  "        pm.expect(user).to.have.property(\"last_name\");",
+                  "        pm.expect(user).to.have.property(\"avatar\");",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Each user's email is a valid email format\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;",
+                  "    jsonData.data.forEach(function (user) {",
+                  "        pm.expect(user.email).to.match(emailRegex);",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Each user's avatar is a valid URL\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.data.forEach(function (user) {",
+                  "        pm.expect(user.avatar).to.match(/^https?:\\/\\/.+/);",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Each user's id is a positive integer\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.data.forEach(function (user) {",
+                  "        pm.expect(user.id).to.be.a(\"number\").and.to.be.above(0);",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response contains 'support' object with 'url' and 'text'\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"support\");",
+                  "    pm.expect(jsonData.support).to.have.property(\"url\");",
+                  "    pm.expect(jsonData.support).to.have.property(\"text\");",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Bearer token environment variable is set (token not empty)\", function () {",
+                  "    var token = pm.environment.get(\"token\");",
+                  "    pm.expect(token).to.be.a(\"string\").and.to.have.length.above(0);",
+                  "});",
+                  "",
+                  "// --- NEGATIVE TEST CASES ---",
+                  "",
+                  "pm.test(\"❌ [Negative] Status code is NOT 401 Unauthorized\", function () {",
+                  "    pm.expect(pm.response.code).to.not.eql(401);",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] Status code is NOT 403 Forbidden\", function () {",
+                  "    pm.expect(pm.response.code).to.not.eql(403);",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] Status code is NOT 404 Not Found\", function () {",
+                  "    pm.expect(pm.response.code).to.not.eql(404);",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] Status code is NOT 5xx (no server error)\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(500, 599);",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] Response body does NOT contain an 'error' property\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property(\"error\");",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] 'data' array does NOT contain users from page 1 (id 1–6)\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var page1Ids = [1, 2, 3, 4, 5, 6];",
+                  "    jsonData.data.forEach(function (user) {",
+                  "        pm.expect(page1Ids).to.not.include(user.id);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pub_cefb273f9e8010a712e56470deb3c7f06762af7fbe9279ef13b8d85dd19410fa",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"eve.holt@reqres.in\",\r\n    \"password\": \"cityslicka\"\r\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users?page=2",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "## Get User\n\n**Method:** `GET`  \n**Endpoint:** `{{baseURL}}/api/users?page=2`  \n**Folder:** Authorization and Authentication — Step 2 of 2\n\n---\n\n### Purpose\n\nRetrieves a paginated list of users from the API using **Bearer Token authentication**. The token is dynamically sourced from the `{{token}}` environment variable, which is automatically populated by the preceding Login request. A pre-request script also records the current Unix timestamp in `{{timestamp}}` before the request fires.\n\n---\n\n### Request Details\n\n**Authentication:** Bearer Token — `{{token}}`\n\n**Headers**\n\n| Key | Value | Description |\n|-----|-------|-------------|\n| `x-api-key` | `pub_cefb...` | API key required by reqres.in |\n| `Authorization` | `Bearer {{token}}` | Bearer token injected from `{{token}}` environment variable |\n\n**Query Parameters**\n\n| Parameter | Value | Description |\n|-----------|-------|-------------|\n| `page` | `2` | Returns the second page of the users list |\n\n---\n\n### Pre-Request Script\n\nSets the current Unix timestamp (in seconds) into the `{{timestamp}}` environment variable before the request is sent:\n\n```javascript\npm.environment.set(\"timestamp\", Math.floor(Date.now() / 1000));\nconsole.log(\"timestamp:\", Math.floor(Date.now() / 1000));\n```\n\n---\n\n### Expected Response\n\n**Status:** `200 OK`\n\n```json\n{\n    \"page\": 2,\n    \"per_page\": 6,\n    \"total\": 12,\n    \"total_pages\": 2,\n    \"data\": [\n        {\n            \"id\": 7,\n            \"email\": \"michael.lawson@reqres.in\",\n            \"first_name\": \"Michael\",\n            \"last_name\": \"Lawson\",\n            \"avatar\": \"https://reqres.in/img/faces/7-image.jpg\"\n        }\n    ],\n    \"support\": {\n        \"url\": \"https://contentcaddy.io?utm_source=reqres...\",\n        \"text\": \"...\"\n    }\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `page` | integer | Current page number |\n| `per_page` | integer | Number of records per page |\n| `total` | integer | Total number of users |\n| `total_pages` | integer | Total number of pages |\n| `data` | array | Array of user objects |\n| `data[].id` | integer | User ID |\n| `data[].email` | string | User email address |\n| `data[].first_name` | string | User's first name |\n| `data[].last_name` | string | User's last name |\n| `data[].avatar` | string | URL to the user's avatar image |\n| `support.url` | string | Support/sponsor URL |\n| `support.text` | string | Support/sponsor message |\n\n---\n\n### Test Coverage\n\n**Positive Tests (15)**\n- `✅ Status code is 200 OK`\n- `✅ Response time is under 3000ms`\n- `✅ Response Content-Type is application/json`\n- `✅ Response body is valid JSON`\n- `✅ Response contains 'page' property`\n- `✅ Page number equals 2 (matches query param)`\n- `✅ Response contains 'per_page' property`\n- `✅ Response contains 'total' property as a positive number`\n- `✅ Response contains 'total_pages' property`\n- `✅ Response contains 'data' array`\n- `✅ 'data' array is non-empty`\n- `✅ Each user object has required fields: id, email, first_name, last_name, avatar`\n- `✅ Each user's email is a valid email format`\n- `✅ Each user's avatar is a valid URL`\n- `✅ Each user's id is a positive integer`\n- `✅ Response contains 'support' object with 'url' and 'text'`\n- `✅ Bearer token environment variable is set (token not empty)`\n\n**Negative Tests (6)**\n- `❌ Status code is NOT 401 Unauthorized`\n- `❌ Status code is NOT 403 Forbidden`\n- `❌ Status code is NOT 404 Not Found`\n- `❌ Status code is NOT 5xx (no server error)`\n- `❌ Response body does NOT contain an 'error' property`\n- `❌ 'data' array does NOT contain users from page 1 (id 1–6)`\n\n---\n\n### Environment Variables\n\n| Variable | Direction | Description |\n|----------|-----------|-------------|\n| `{{baseURL}}` | Read | Base URL of the API |\n| `{{token}}` | **Read** | Bearer token set by the Login request |\n| `{{timestamp}}` | **Written** | Unix timestamp set by the pre-request script |\n\n---\n\n### Dependencies\n\n- Requires `{{baseURL}}` to be set in the active environment\n- Requires `{{token}}` to be populated — run the **Login** request first\n\n---\n\n### Notes\n\n- This request targets the [reqres.in](https://reqres.in) hosted REST API\n- Page 2 returns user IDs 7–12; the negative test confirms page 1 IDs (1–6) are not present"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// =============================================",
+                  "// LOGIN REQUEST — TEST SUITE",
+                  "// =============================================",
+                  "",
+                  "// --- POSITIVE TEST CASES ---",
+                  "",
+                  "pm.test(\"✅ [Positive] Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response time is under 3000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response Content-Type is application/json\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response body is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response body contains 'token' property\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"token\");",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Token is a non-empty string\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.be.a(\"string\").and.to.have.length.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Token is stored in environment variable\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"token\", jsonData.token);",
+                  "    pm.expect(pm.environment.get(\"token\")).to.eql(jsonData.token);",
+                  "    console.log(\"response token: \", jsonData.token);",
+                  "});",
+                  "",
+                  "pm.test(\"✅ [Positive] Response body does NOT expose password\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property(\"password\");",
+                  "});",
+                  "",
+                  "// --- NEGATIVE TEST CASES ---",
+                  "",
+                  "pm.test(\"❌ [Negative] Status code is NOT 4xx (no client error on valid credentials)\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.oneOf([400, 401, 403, 404, 422]);",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] Status code is NOT 5xx (no server error)\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(500, 599);",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] Response body does NOT contain an 'error' property\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property(\"error\");",
+                  "});",
+                  "",
+                  "pm.test(\"❌ [Negative] Token value is NOT null or undefined\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.not.be.null;",
+                  "    pm.expect(jsonData.token).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pub_cefb273f9e8010a712e56470deb3c7f06762af7fbe9279ef13b8d85dd19410fa",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"eve.holt@reqres.in\",\r\n    \"password\": \"cityslicka\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/login",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "## Login\n\n**Method:** `POST`  \n**Endpoint:** `{{baseURL}}/api/login`  \n**Folder:** Authorization and Authentication — Step 1 of 2\n\n---\n\n### Purpose\n\nAuthenticates a user against the reqres.in API using email and password credentials. On success, the returned bearer `token` is automatically extracted by the post-response test script and stored in the `{{token}}` environment variable for use by the subsequent Get User request.\n\n---\n\n### Request Details\n\n**Headers**\n\n| Key | Value | Description |\n|-----|-------|-------------|\n| `Content-Type` | `application/json` | Request body format |\n| `x-api-key` | `pub_cefb...` | API key required by reqres.in |\n\n**Body (JSON)**\n\n```json\n{\n    \"email\": \"eve.holt@reqres.in\",\n    \"password\": \"cityslicka\"\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `email` | string | Registered email address |\n| `password` | string | User password |\n\n---\n\n### Expected Response\n\n**Status:** `200 OK`\n\n```json\n{\n    \"token\": \"QpwL5tpe83ilfN2\"\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `token` | string | Bearer token for authenticated requests |\n\n---\n\n### Post-Response Script (Tests)\n\nThe test script performs the following:\n1. Validates the response contains a `token` property\n2. Stores the token in `{{token}}` via `pm.environment.set(\"token\", jsonData.token)`\n3. Logs the token to the Postman console\n\n---\n\n### Test Coverage\n\n**Positive Tests (8)**\n- `✅ Status code is 200 OK`\n- `✅ Response time is under 3000ms`\n- `✅ Response Content-Type is application/json`\n- `✅ Response body is valid JSON`\n- `✅ Response body contains 'token' property`\n- `✅ Token is a non-empty string`\n- `✅ Token is stored in environment variable`\n- `✅ Response body does NOT expose password`\n\n**Negative Tests (4)**\n- `❌ Status code is NOT 4xx (no client error on valid credentials)`\n- `❌ Status code is NOT 5xx (no server error)`\n- `❌ Response body does NOT contain an 'error' property`\n- `❌ Token value is NOT null or undefined`\n\n---\n\n### Environment Variables\n\n| Variable | Direction | Description |\n|----------|-----------|-------------|\n| `{{baseURL}}` | Read | Base URL of the API |\n| `{{token}}` | **Written** | Token extracted from response and stored for downstream use |\n\n---\n\n### Dependencies\n\n- Requires `{{baseURL}}` to be set in the active environment (e.g., `https://reqres.in`)\n- Must be run **before** Get User so that `{{token}}` is populated\n\n---\n\n### Notes\n\n- This request targets the [reqres.in](https://reqres.in) hosted REST API\n- The credentials used (`eve.holt@reqres.in` / `cityslicka`) are test credentials provided by reqres.in"
+          },
+          "response": []
+        }
+      ],
+      "description": "## Authorization and Authentication\n\nThis folder covers the **core authentication and authorized data-access flow** for the project. It contains two requests that work together in sequence to demonstrate a complete login-to-data-retrieval workflow.\n\n---\n\n### Folder Overview\n\n| Step | Request | Method | Endpoint | Purpose |\n|------|---------|--------|----------|---------| \n| 1 | Login | `POST` | `{{baseURL}}/api/login` | Authenticate and extract bearer token |\n| 2 | Get User | `GET` | `{{baseURL}}/api/users?page=2` | Retrieve paginated user list using the token |\n\n---\n\n### Requests in this Folder\n\n#### 1. Login — `POST {{baseURL}}/api/login`\n\nAuthenticates a user using email and password credentials. On success, the returned `token` is automatically extracted by the post-response test script and stored in the `{{token}}` environment variable for use in subsequent requests.\n\n**Test Coverage:** 8 positive tests, 4 negative tests\n\n#### 2. Get User — `GET {{baseURL}}/api/users?page=2`\n\nRetrieves a paginated list of users from the API using Bearer Token authentication. The token is sourced dynamically from `{{token}}`. A pre-request script also sets a `{{timestamp}}` environment variable before the request fires.\n\n**Test Coverage:** 15 positive tests, 6 negative tests\n\n---\n\n### Environment Variables Used\n\n| Variable | Direction | Description |\n|----------|-----------|-------------|\n| `{{baseURL}}` | Read | Base URL of the API |\n| `{{token}}` | Written (Login) / Read (Get User) | Bearer token extracted from Login response |\n| `{{timestamp}}` | Written (Get User pre-request) | Unix timestamp set before the Get User request fires |\n\n---\n\n### How to Run\n\nRun the requests **in order** (Login first, then Get User). The Login request's test script automatically populates `{{token}}`, which Get User then uses for authentication. No manual variable setup is needed beyond setting `{{baseURL}}` in the active environment.\n\n---\n\n### Notes\n\n- Both requests target the [reqres.in](https://reqres.in) hosted REST API\n- All requests include an `x-api-key` header required by reqres.in\n- This folder is self-contained and can be run independently of the User Flow Automation folder"
+    },
+    {
+      "name": "User Flow Automation",
+      "item": [
+        {
+          "name": "Login (extract token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// ─── EXISTING TEST ───────────────────────────────────────────────────────────",
+                  "pm.test(\"Response has 'token' property\",function(){",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.environment.set(\"token\", jsonData.token);",
+                  "    console.log('token value is:',jsonData.token)",
+                  "    console.log('token value is:',pm.environment.get(\"token\"))",
+                  "})",
+                  "",
+                  "// ─── POSITIVE TESTS ──────────────────────────────────────────────────────────",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is under 3000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test(\"Token is a non-empty string\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.be.a('string').and.to.have.length.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"Token is stored in environment variable\", function () {",
+                  "    pm.expect(pm.environment.get('token')).to.not.be.undefined;",
+                  "    pm.expect(pm.environment.get('token')).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Response body is a valid JSON object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "});",
+                  "",
+                  "// ─── NEGATIVE / EDGE-CASE TESTS ──────────────────────────────────────────────",
+                  "pm.test(\"Response does NOT contain 'error' field on success\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property('error');",
+                  "});",
+                  "",
+                  "pm.test(\"Token value is not 'null' or 'undefined' string\", function () {",
+                  "    var token = pm.environment.get('token');",
+                  "    pm.expect(token).to.not.equal('null');",
+                  "    pm.expect(token).to.not.equal('undefined');",
+                  "});",
+                  "",
+                  "pm.test(\"Response does not expose sensitive password field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property('password');",
+                  "});",
+                  "",
+                  "pm.test(\"Status code is not 4xx or 5xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.below(400);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Compute current local timestamp and store in environment variable 'time now' as MM-DD-YYYY HH:MM:SS",
+                  "(function(){",
+                  "    const pad = (n) => String(n).padStart(2, '0');",
+                  "    const d = new Date();",
+                  "    const month = pad(d.getMonth() + 1); // MM",
+                  "    const day = pad(d.getDate()); // DD    ",
+                  "    const year = d.getFullYear(); // YYYY",
+                  "    const hours = pad(d.getHours()); // HH",
+                  "    const minutes = pad(d.getMinutes()); // MM",
+                  "    const seconds = pad(d.getSeconds()); // SS",
+                  "    const formatted = `${month}-${day}-${year} ${hours}:${minutes}:${seconds}`;",
+                  "    pm.environment.set(\"time now\", formatted);",
+                  "    console.log(\"pre-req : time now =\", pm.environment.get(\"time now\") );",
+                  "})();"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pub_cefb273f9e8010a712e56470deb3c7f06762af7fbe9279ef13b8d85dd19410fa",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"eve.holt@reqres.in\",\r\n    \"password\": \"cityslicka\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "## Login (extract token)\n\n**Method:** `POST`  \n**Endpoint:** `{{baseUrl}}/api/login`  \n**Folder:** User Flow Automation — Step 1 of 4\n\n---\n\n### Purpose\n\nAuthenticates the user against the reqres.in API using email and password credentials. On success, extracts the returned bearer `token` and stores it in the environment variable `{{token}}` for use by subsequent requests (Create User, Update User, Delete User). A pre-request script also records the current local timestamp in `{{time now}}`.\n\n---\n\n### Request Details\n\n**Headers**\n\n| Key | Value | Description |\n|-----|-------|-------------|\n| `Content-Type` | `application/json` | Request body format |\n| `x-api-key` | `pub_cefb...` | API key required by reqres.in |\n\n**Body (JSON)**\n\n```json\n{\n    \"email\": \"eve.holt@reqres.in\",\n    \"password\": \"cityslicka\"\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `email` | string | Registered email address |\n| `password` | string | User password |\n\n---\n\n### Pre-Request Script\n\nComputes the current local timestamp and stores it in `{{time now}}` (format: `MM-DD-YYYY HH:MM:SS`):\n\n```javascript\n(function(){\n    const pad = (n) => String(n).padStart(2, '0');\n    const d = new Date();\n    const formatted = `${pad(d.getMonth()+1)}-${pad(d.getDate())}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;\n    pm.environment.set(\"time now\", formatted);\n    console.log(\"pre-req : time now =\", pm.environment.get(\"time now\"));\n})();\n```\n\n---\n\n### Expected Response\n\n**Status:** `200 OK`\n\n```json\n{\n    \"token\": \"QpwL5tpe83ilfN2\"\n}\n```\n\n---\n\n### Test Coverage\n\n**Positive Tests (7)**\n- `Response has 'token' property` — Validates token exists and stores it in `{{token}}`\n- `Status code is 200`\n- `Response time is under 3000ms`\n- `Content-Type is application/json`\n- `Token is a non-empty string`\n- `Token is stored in environment variable`\n- `Response body is a valid JSON object`\n\n**Negative / Edge-Case Tests (4)**\n- `Response does NOT contain 'error' field on success`\n- `Token value is not 'null' or 'undefined' string`\n- `Response does not expose sensitive password field`\n- `Status code is not 4xx or 5xx`\n\n---\n\n### Environment Variables\n\n| Variable | Direction | Description |\n|----------|-----------|-------------|\n| `{{baseUrl}}` | Read | Base URL of the API |\n| `{{token}}` | **Written** | Bearer token extracted from response |\n| `{{time now}}` | **Written** | Current timestamp set by pre-request script |\n\n---\n\n### Dependencies\n\n- Requires `{{baseUrl}}` to be set in the active environment (e.g., `https://reqres.in`)\n- Must be run **first** in the User Flow Automation sequence\n\n---\n\n### Notes\n\n- This request targets the [reqres.in](https://reqres.in) hosted REST API\n- The credentials used (`eve.holt@reqres.in` / `cityslicka`) are test credentials provided by reqres.in"
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// ─── EXISTING TEST ───────────────────────────────────────────────────────────",
+                  "// Extract 'id' from JSON response, store in env var 'userId', and log it",
+                  "pm.test(\"Response is valid Json and contains 'id'\", function(){",
+                  "    let body;",
+                  "    try {",
+                  "        body = pm.response.json();",
+                  "    }catch (e){",
+                  "        pm.expect.fail(\"Response is not valid JSON: \", e.message);",
+                  "    }",
+                  "",
+                  "    pm.expect(body).to.be.an('object');",
+                  "    pm.expect(body, \"Response body should have 'id\").to.have.property('id');",
+                  "",
+                  "    const idVal = body.id;",
+                  "    pm.environment.set(\"userId\", String(idVal));",
+                  "    console.log(\"userId set to:\",pm.environment.get(\"userId\"));",
+                  "",
+                  "    // Basic sanity check for common create response",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "})",
+                  "",
+                  "// ─── POSITIVE TESTS ──────────────────────────────────────────────────────────",
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is under 3000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains 'name' field matching request\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData.name).to.equal('Suraj');",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains 'job' field matching request\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job');",
+                  "    pm.expect(jsonData.job).to.equal('Automation Engineer');",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains 'createdAt' timestamp\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('createdAt');",
+                  "    pm.expect(jsonData.createdAt).to.be.a('string').and.to.have.length.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"userId environment variable is set and non-empty\", function () {",
+                  "    pm.expect(pm.environment.get('userId')).to.not.be.undefined;",
+                  "    pm.expect(pm.environment.get('userId')).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"User ID is a non-empty string\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(String(jsonData.id)).to.have.length.above(0);",
+                  "});",
+                  "",
+                  "// ─── NEGATIVE / EDGE-CASE TESTS ──────────────────────────────────────────────",
+                  "pm.test(\"Response does NOT contain 'error' field on success\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property('error');",
+                  "});",
+                  "",
+                  "pm.test(\"Status code is not 4xx or 5xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.below(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body is not an empty object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(Object.keys(jsonData).length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"'id' field is not null or undefined\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.not.be.null;",
+                  "    pm.expect(jsonData.id).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pub_cefb273f9e8010a712e56470deb3c7f06762af7fbe9279ef13b8d85dd19410fa",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Suraj\",\r\n    \"job\": \"Automation Engineer\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "## Create User\n\n**Method:** `POST`  \n**Endpoint:** `{{baseUrl}}/api/users`  \n**Folder:** User Flow Automation — Step 2 of 4\n\n---\n\n### Purpose\n\nCreates a new user on the reqres.in API using the bearer token obtained from the Login step. On success, extracts the returned `id` and stores it in the environment variable `{{userId}}` for use by the Update User and Delete User requests.\n\n---\n\n### Request Details\n\n**Authentication:** Bearer Token — `{{token}}` (set by Login step)\n\n**Headers**\n\n| Key | Value | Description |\n|-----|-------|-------------|\n| `Content-Type` | `application/json` | Request body format |\n| `x-api-key` | `pub_cefb...` | API key required by reqres.in |\n\n**Body (JSON)**\n\n```json\n{\n    \"name\": \"Suraj\",\n    \"job\": \"Automation Engineer\"\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `name` | string | Name of the user to create |\n| `job` | string | Job title of the user |\n\n---\n\n### Expected Response\n\n**Status:** `201 Created`\n\n```json\n{\n    \"name\": \"Suraj\",\n    \"job\": \"Automation Engineer\",\n    \"id\": \"123\",\n    \"createdAt\": \"2026-05-13T11:00:00.000Z\"\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `name` | string | Name of the created user |\n| `job` | string | Job title of the created user |\n| `id` | string | Unique ID assigned to the new user |\n| `createdAt` | string | ISO 8601 timestamp of creation |\n\n---\n\n### Post-Response Script\n\nThe test script extracts the `id` from the response and stores it in `{{userId}}`:\n\n```javascript\nconst idVal = body.id;\npm.environment.set(\"userId\", String(idVal));\nconsole.log(\"userId set to:\", pm.environment.get(\"userId\"));\n```\n\n---\n\n### Test Coverage\n\n**Positive Tests (9)**\n- `Response is valid JSON and contains 'id'` — Validates JSON structure, confirms `id` exists, stores it in `{{userId}}`\n- `Status code is 201 Created`\n- `Response time is under 3000ms`\n- `Content-Type is application/json`\n- `Response contains 'name' field matching request` — Confirms `name` equals `\"Suraj\"`\n- `Response contains 'job' field matching request` — Confirms `job` equals `\"Automation Engineer\"`\n- `Response contains 'createdAt' timestamp`\n- `userId environment variable is set and non-empty`\n- `User ID is a non-empty string`\n\n**Negative / Edge-Case Tests (4)**\n- `Response does NOT contain 'error' field on success`\n- `Status code is not 4xx or 5xx`\n- `Response body is not an empty object`\n- `'id' field is not null or undefined`\n\n---\n\n### Environment Variables\n\n| Variable | Direction | Description |\n|----------|-----------|-------------|\n| `{{baseUrl}}` | Read | Base URL of the API |\n| `{{token}}` | Read | Bearer token set by Login step |\n| `{{userId}}` | **Written** | User ID extracted from response, used by Update and Delete steps |\n\n---\n\n### Dependencies\n\n- Requires `{{baseUrl}}` to be set in the active environment\n- Requires `{{token}}` to be set — run **Login (extract token)** first\n\n---\n\n### Notes\n\n- This request targets the [reqres.in](https://reqres.in) hosted REST API\n- reqres.in simulates user creation but does not persist data between requests"
+          },
+          "response": []
+        },
+        {
+          "name": "Update user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// ─── EXISTING TEST ───────────────────────────────────────────────────────────",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// ─── POSITIVE TESTS ──────────────────────────────────────────────────────────",
+                  "pm.test(\"Response time is under 3000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test(\"Response body is a valid JSON object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains updated 'name' field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData.name).to.equal('Suraj DP');",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains updated 'Job' field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('Job');",
+                  "    pm.expect(jsonData.Job).to.equal('QA Automation Engineer');",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains 'updatedAt' timestamp\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('updatedAt');",
+                  "    pm.expect(jsonData.updatedAt).to.be.a('string').and.to.have.length.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"'updatedAt' is a valid ISO 8601 date string\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var date = new Date(jsonData.updatedAt);",
+                  "    pm.expect(isNaN(date.getTime())).to.be.false;",
+                  "});",
+                  "",
+                  "pm.test(\"userId environment variable is still set\", function () {",
+                  "    pm.expect(pm.environment.get('userId')).to.not.be.undefined;",
+                  "    pm.expect(pm.environment.get('userId')).to.not.be.empty;",
+                  "});",
+                  "",
+                  "// ─── NEGATIVE / EDGE-CASE TESTS ──────────────────────────────────────────────",
+                  "pm.test(\"Response does NOT contain 'error' field on success\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property('error');",
+                  "});",
+                  "",
+                  "pm.test(\"Status code is not 4xx or 5xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.below(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body is not empty\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Response does not return stale/old name\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.not.equal('Suraj');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pub_cefb273f9e8010a712e56470deb3c7f06762af7fbe9279ef13b8d85dd19410fa",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Suraj DP\",\r\n    \"Job\": \"QA Automation Engineer\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "## Update User\n\n**Method:** `PUT`  \n**Endpoint:** `{{baseUrl}}/api/users/{{userId}}`  \n**Folder:** User Flow Automation — Step 3 of 4\n\n---\n\n### Purpose\n\nUpdates the details of the user created in the previous step. Uses the `{{userId}}` environment variable (set by Create User) to target the correct user, and the `{{token}}` bearer token for authentication. Validates that the API correctly reflects the updated `name` and `Job` fields, and returns an `updatedAt` timestamp.\n\n---\n\n### Request Details\n\n**Authentication:** Bearer Token — `{{token}}` (set by Login step)\n\n**Headers**\n\n| Key | Value | Description |\n|-----|-------|-------------|\n| `Content-Type` | `application/json` | Request body format |\n| `x-api-key` | `pub_cefb...` | API key required by reqres.in |\n\n**Body (JSON)**\n\n```json\n{\n    \"name\": \"Suraj DP\",\n    \"Job\": \"QA Automation Engineer\"\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `name` | string | Updated name for the user |\n| `Job` | string | Updated job title (note: capital J as expected by the API) |\n\n---\n\n### Expected Response\n\n**Status:** `200 OK`\n\n```json\n{\n    \"name\": \"Suraj DP\",\n    \"Job\": \"QA Automation Engineer\",\n    \"updatedAt\": \"2026-05-13T11:00:00.000Z\"\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `name` | string | Updated name |\n| `Job` | string | Updated job title |\n| `updatedAt` | string | ISO 8601 timestamp of the update |\n\n---\n\n### Test Coverage\n\n**Positive Tests (9)**\n- `Status code is 200`\n- `Response time is under 3000ms`\n- `Content-Type is application/json`\n- `Response body is a valid JSON object`\n- `Response contains updated 'name' field` — Confirms `name` equals `\"Suraj DP\"`\n- `Response contains updated 'Job' field` — Confirms `Job` equals `\"QA Automation Engineer\"`\n- `Response contains 'updatedAt' timestamp`\n- `'updatedAt' is a valid ISO 8601 date string`\n- `userId environment variable is still set` — Confirms `{{userId}}` persists for the Delete step\n\n**Negative / Edge-Case Tests (4)**\n- `Response does NOT contain 'error' field on success`\n- `Status code is not 4xx or 5xx`\n- `Response body is not empty`\n- `Response does not return stale/old name` — Confirms `name` is not the old value `\"Suraj\"`\n\n---\n\n### Environment Variables\n\n| Variable | Direction | Description |\n|----------|-----------|-------------|\n| `{{baseUrl}}` | Read | Base URL of the API |\n| `{{token}}` | Read | Bearer token set by Login step |\n| `{{userId}}` | Read | User ID set by Create User step, used in URL path |\n\n---\n\n### Dependencies\n\n- Requires `{{baseUrl}}` to be set in the active environment\n- Requires `{{token}}` to be set — run **Login (extract token)** first\n- Requires `{{userId}}` to be set — run **Create User** first\n\n---\n\n### Notes\n\n- This request targets the [reqres.in](https://reqres.in) hosted REST API\n- Note the capital `J` in `Job` — this matches the field name expected and returned by the reqres.in API\n- reqres.in simulates the update but does not persist changes"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// ─── EXISTING TEST ───────────────────────────────────────────────────────────",
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "// ─── POSITIVE TESTS ──────────────────────────────────────────────────────────",
+                  "pm.test(\"Response time is under 3000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body is empty (no content on delete)\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Status code confirms successful deletion (204 No Content)\", function () {",
+                  "    pm.expect(pm.response.code).to.equal(204);",
+                  "});",
+                  "",
+                  "pm.test(\"userId environment variable was set before deletion\", function () {",
+                  "    pm.expect(pm.environment.get('userId')).to.not.be.undefined;",
+                  "    pm.expect(pm.environment.get('userId')).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Response does not return a body with error\", function () {",
+                  "    // 204 should have no body; if somehow there is one, it must not contain 'error'",
+                  "    var rawBody = pm.response.text();",
+                  "    if (rawBody && rawBody.length > 0) {",
+                  "        try {",
+                  "            var jsonData = pm.response.json();",
+                  "            pm.expect(jsonData).to.not.have.property('error');",
+                  "        } catch(e) {",
+                  "            // Non-JSON body on 204 is acceptable",
+                  "        }",
+                  "    } else {",
+                  "        pm.expect(rawBody).to.be.empty;",
+                  "    }",
+                  "});",
+                  "",
+                  "// ─── NEGATIVE / EDGE-CASE TESTS ──────────────────────────────────────────────",
+                  "pm.test(\"Status code is not 404 (user existed before delete)\", function () {",
+                  "    pm.expect(pm.response.code).to.not.equal(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Status code is not 401 (request was authorized)\", function () {",
+                  "    pm.expect(pm.response.code).to.not.equal(401);",
+                  "});",
+                  "",
+                  "pm.test(\"Status code is not 403 (not forbidden)\", function () {",
+                  "    pm.expect(pm.response.code).to.not.equal(403);",
+                  "});",
+                  "",
+                  "pm.test(\"Status code is not 500 (no server error)\", function () {",
+                  "    pm.expect(pm.response.code).to.not.equal(500);",
+                  "});",
+                  "",
+                  "// Clean up: clear userId from environment after deletion",
+                  "pm.environment.unset('userId');",
+                  "console.log('userId cleared from environment after deletion.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pub_cefb273f9e8010a712e56470deb3c7f06762af7fbe9279ef13b8d85dd19410fa",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "## Delete User\n\n**Method:** `DELETE`  \n**Endpoint:** `{{baseUrl}}/api/users/{{userId}}`  \n**Folder:** User Flow Automation — Step 4 of 4\n\n---\n\n### Purpose\n\nDeletes the user created in Step 2 using the `{{userId}}` environment variable. Validates that the API returns a `204 No Content` response with an empty body, confirming successful deletion. After all tests run, the `{{userId}}` environment variable is cleaned up (unset) to leave the environment in a clean state for the next run.\n\n---\n\n### Request Details\n\n**Authentication:** Bearer Token — `{{token}}` (set by Login step)\n\n**Headers**\n\n| Key | Value | Description |\n|-----|-------|-------------|\n| `x-api-key` | `pub_cefb...` | API key required by reqres.in |\n\n**Body:** None — DELETE requests do not require a body\n\n---\n\n### Expected Response\n\n**Status:** `204 No Content`  \n**Body:** *(empty)*\n\n---\n\n### Post-Test Cleanup\n\nAfter all tests run, the test script unsets `{{userId}}` from the environment:\n\n```javascript\npm.environment.unset('userId');\nconsole.log('userId cleared from environment after deletion.');\n```\n\nThis ensures the environment is clean for the next Collection Runner execution.\n\n---\n\n### Test Coverage\n\n**Positive Tests (6)**\n- `Status code is 204` — Confirms successful deletion (No Content)\n- `Response time is under 3000ms`\n- `Response body is empty (no content on delete)`\n- `Status code confirms successful deletion (204 No Content)`\n- `userId environment variable was set before deletion` — Confirms `{{userId}}` was available\n- `Response does not return a body with error` — If any body exists, it must not contain `error`\n\n**Negative / Edge-Case Tests (4)**\n- `Status code is not 404 (user existed before delete)`\n- `Status code is not 401 (request was authorized)`\n- `Status code is not 403 (not forbidden)`\n- `Status code is not 500 (no server error)`\n\n---\n\n### Environment Variables\n\n| Variable | Direction | Description |\n|----------|-----------|-------------|\n| `{{baseUrl}}` | Read | Base URL of the API |\n| `{{token}}` | Read | Bearer token set by Login step |\n| `{{userId}}` | Read then **Unset** | User ID used in URL path; cleared after deletion |\n\n---\n\n### Dependencies\n\n- Requires `{{baseUrl}}` to be set in the active environment\n- Requires `{{token}}` to be set — run **Login (extract token)** first\n- Requires `{{userId}}` to be set — run **Create User** first\n\n---\n\n### Notes\n\n- This request targets the [reqres.in](https://reqres.in) hosted REST API\n- This is the final step in the User Flow Automation sequence\n- After this request, `{{userId}}` is automatically removed from the environment, making the flow safe to re-run immediately"
+          },
+          "response": []
+        }
+      ],
+      "description": "## User Flow Automation\n\nThis folder contains a **complete end-to-end automated test flow** for a User Management API powered by [reqres.in](https://reqres.in). It covers the full lifecycle of a user — authentication, creation, update, and deletion — all chained together using Postman environment variables and the Collection Runner.\n\n---\n\n### Test Flow\n\nThe requests must be executed **in sequence**:\n\n| Step | Request | Method | Endpoint | Purpose |\n|------|---------|--------|----------|---------| \n| 1 | Login (extract token) | `POST` | `{{baseUrl}}/api/login` | Authenticate and store `{{token}}` |\n| 2 | Create User | `POST` | `{{baseUrl}}/api/users` | Create a user and store `{{userId}}` |\n| 3 | Update User | `PUT` | `{{baseUrl}}/api/users/{{userId}}` | Update the created user's details |\n| 4 | Delete User | `DELETE` | `{{baseUrl}}/api/users/{{userId}}` | Delete the user and clean up `{{userId}}` |\n\n---\n\n### Environment Variable Flow\n\n```\nLogin (extract token)\n  └─ sets {{token}}\n       └─ used by: Create User, Update User, Delete User\n\nCreate User\n  └─ sets {{userId}}\n       └─ used by: Update User, Delete User\n\nDelete User\n  └─ unsets {{userId}}  ← environment cleanup\n\nLogin (extract token) pre-request\n  └─ sets {{time now}}  ← current timestamp (MM-DD-YYYY HH:MM:SS)\n```\n\n---\n\n### Test Coverage Summary\n\n| Request | Positive Tests | Negative Tests | Total |\n|---------|---------------|----------------|-------|\n| Login (extract token) | 7 | 4 | 11 |\n| Create User | 9 | 4 | 13 |\n| Update User | 9 | 4 | 13 |\n| Delete User | 6 | 4 | 10 |\n| **Total** | **31** | **16** | **47** |\n\n---\n\n### How to Run\n\n1. Ensure the **Environment Testing 2** environment is active\n2. Set `{{baseUrl}}` to `https://reqres.in`\n3. Open the **Collection Runner**, select this folder (or the full collection)\n4. Run all 4 requests in order — scripts handle all variable propagation automatically\n5. After the run, `{{userId}}` will be automatically cleared from the environment\n\n---\n\n### Notes\n\n- All requests use **Bearer Token** authentication via `{{token}}`\n- All requests include the `x-api-key` header required by reqres.in\n- The flow is idempotent: each run creates a fresh user, updates it, then deletes it\n- The Login pre-request script records the run start time in `{{time now}}`"
+    }
+  ]
+}
